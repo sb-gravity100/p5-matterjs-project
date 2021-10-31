@@ -3,7 +3,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const WorkboxWebpackPlugin = require('workbox-webpack-plugin');
 
 const isProduction = process.env.NODE_ENV == 'production';
 
@@ -14,7 +13,7 @@ const stylesHandler = isProduction
 const config = {
    entry: './src/index.ts',
    output: {
-      path: path.resolve(__dirname, 'dist'),
+      path: path.resolve(__dirname, 'build'),
    },
    devServer: {
       host: '0.0.0.0',
@@ -40,7 +39,7 @@ const config = {
          },
          {
             test: /\.s[ac]ss$/i,
-            use: [stylesHandler, 'css-loader', 'postcss-loader', 'sass-loader'],
+            use: [stylesHandler, 'css-loader', 'sass-loader'],
          },
          {
             test: /\.(eot|svg|ttf|woff|woff2|png|jpg|gif)$/i,
@@ -52,17 +51,20 @@ const config = {
       ],
    },
    resolve: {
-      extensions: ['.tsx', '.ts', '.js'],
+      extensions: ['.ts', '.js'],
+   },
+   optimization: {
+      runtimeChunk: true,
+      splitChunks: {
+         chunks: 'all',
+      },
    },
 };
 
 module.exports = () => {
    if (isProduction) {
       config.mode = 'production';
-
       config.plugins.push(new MiniCssExtractPlugin());
-
-      config.plugins.push(new WorkboxWebpackPlugin.GenerateSW());
    } else {
       config.mode = 'development';
    }

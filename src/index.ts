@@ -1,4 +1,5 @@
 import './style.scss';
+const { noise } = require('@chriscourses/perlin-noise');
 import p5 from 'p5';
 
 const sketch = (p: p5) => {
@@ -12,14 +13,18 @@ const sketch = (p: p5) => {
    };
 
    p.draw = () => {
+      // console.log(performance.now());
+      p.clear();
       p.background(40);
       p.push();
-      // p.fill('#ffffffff')
-      // console.log(p.frameCount);
       p.noFill();
-      p.stroke(Math.cos(p.frameCount / 100) * 360, 55, 55);
+      p.stroke(360, 55, 55);
       p.strokeWeight(4);
-      p.ellipse(innerWidth / 2, innerHeight / 2, 80);
+      p.ellipse(
+         Math.floor(noise(performance.now() / 10000, 0) * innerWidth),
+         Math.floor(noise(0, performance.now() / 10000) * innerHeight),
+         80
+      );
       p.pop();
    };
 
@@ -28,4 +33,8 @@ const sketch = (p: p5) => {
    };
 };
 
-new p5(sketch);
+function start() {
+   new p5(sketch);
+}
+
+start();
