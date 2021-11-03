@@ -3,6 +3,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const { ProvidePlugin } = require('webpack');
 
 const isProduction = process.env.NODE_ENV == 'production';
 
@@ -15,6 +16,7 @@ const config = {
    output: {
       path: path.resolve(__dirname, 'build'),
    },
+   stats: 'errors-warnings',
    devServer: {
       host: '0.0.0.0',
       port: 3000,
@@ -28,6 +30,9 @@ const config = {
    plugins: [
       new HtmlWebpackPlugin({
          template: 'index.html',
+      }),
+      new ProvidePlugin({
+         perlin: ['@chriscourses/perlin-noise'],
       }),
    ],
    module: {

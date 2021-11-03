@@ -1,10 +1,10 @@
-import module = require('p5');
-import * as p5Global from 'p5/global';
+import { LoDashStatic } from 'lodash';
 
-export = module;
-export as namespace p5;
-declare global {
-   interface Window {
-      p5: typeof module;
-   }
+interface Perlin {
+   noise(x: number, y?: number, z?: number): number;
+   noiseDetail(lod: number, falloff: number): void;
+   noiseSeed(seed: number): void;
 }
+declare var perlin: Perlin;
+declare var _times: LoDashStatic['times'];
+declare var _chain: LoDashStatic['chain'];
