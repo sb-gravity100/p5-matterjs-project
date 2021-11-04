@@ -8,8 +8,12 @@ interface Math {
       rand?: T,
       ...args: T extends (...args: any[]) => number ? Parameters<T> : never
    ): number;
-   noise(i: number | [x: number, y?:number, z?:number], max: number, min?: number,
-      floor?: boolean): number
+   noise(
+      i: number | [x: number, y?: number, z?: number],
+      max: number,
+      min?: number,
+      floor?: boolean
+   ): number;
 }
 
 Math.toRadians = function toRadians(deg: number) {
@@ -27,19 +31,23 @@ Math.randomNumber = function randomNumber<T>(
    let randomFunc: any = rand || Math.random;
    num = randomFunc(...args) * (max - min) + 1 + min;
    return floor ? Math.floor(num) : num;
-}
+};
 
 Math.distribute = function distribute(count: number, distributedBy: number) {
-   var inc = distributedBy / count
-   return (i) => inc * i
-}
+   var inc = distributedBy / count;
+   return (i) => inc * i;
+};
 
 Math.noise = function generateNoise(i, max, min = 0, floor) {
    let num: number;
    if (Array.isArray(i)) {
-      num = require('@chriscourses/perlin-noise').noise(...i) * (max - min) + 1 + min;
+      num =
+         require('@chriscourses/perlin-noise').noise(...i) * (max - min) +
+         1 +
+         min;
    } else {
-      num = require('@chriscourses/perlin-noise').noise(i) * (max - min) + 1 + min;
+      num =
+         require('@chriscourses/perlin-noise').noise(i) * (max - min) + 1 + min;
    }
    return floor ? Math.floor(num) : num;
-}
+};

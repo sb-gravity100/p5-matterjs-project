@@ -6,11 +6,17 @@ import Matter, {
    Composite,
    Body,
    Constraint,
+   Common,
+   Bounds,
+   Mouse,
+   Vector,
 } from 'matter-js';
 // import khroma from 'khroma'
-import _ from 'lodash';
-import { randomHSL } from './utils';
-import gsap from 'gsap';
+// import _ from 'lodash';
+// import { randomHSL } from './utils';
+// import gsap from 'gsap';
+
+Common.setDecomp(require('poly-decomp'));
 
 var width = innerWidth;
 var height = innerHeight;
@@ -22,13 +28,14 @@ var render: Render;
 var options: Matter.IRendererOptions = {
    height,
    width,
-   wireframes: false,
+   hasBounds: true,
+   wireframes: true,
    // showPositions: true,
    // showCollisions: true,
    // showAxes: true,
    // showVelocity: true,
    showAngleIndicator: true,
-   showDebug: true,
+   // showDebug: true,
    // showVertexNumbers: true,
    // showBroadphase: true,
 };
@@ -53,16 +60,26 @@ var mouse = Matter.Mouse.create(render.canvas),
    }),
    world = engine.world,
    runner = Runner.create(),
-   zoom = 100;
+   zoom = 0,
+   viewportCentre = {
+      x: render.options.width * 0.5,
+      y: render.options.height * 0.5,
+   },
+   extents = {
+      min: { x: -300, y: -300 },
+      max: { x: width + 300, y: height + 300 },
+   },
+   boundsScaleTarget = 1,
+   boundsScale = {
+      x: 1,
+      y: 1,
+   };
+
 render.mouse = mouse;
 
 Composite.add(world, mouseConstraint);
 Render.run(render);
 Runner.run(runner, engine);
-Render.lookAt(render, {
-   min: { x: -zoom, y: -zoom },
-   max: { x: innerWidth + zoom, y: innerHeight + zoom },
-});
 
 const size = 100;
 const wallOpt: Matter.IBodyDefinition = {
@@ -76,226 +93,119 @@ const wallOpt: Matter.IBodyDefinition = {
 // let angle = 0;
 const walls = {
    ground: Bodies.rectangle(centerX, height, width * 100, size, wallOpt),
-   // top: Bodies.rectangle(centerX, 0, width + size, size, wallOpt),
-   // left: Bodies.rectangle(-size / 2, centerY, size, height + size, wallOpt),
-   // right: Bodies.rectangle(
-   //    width + size / 2,
-   //    centerY,
-   //    size,
-   //    height + size,
-   //    wallOpt
-   // ),
+   top: Bodies.rectangle(centerX, 0, width + size, size, wallOpt),
+   left: Bodies.rectangle(-size / 2, centerY, size, height + size, wallOpt),
+   right: Bodies.rectangle(
+      width + size / 2,
+      centerY,
+      size,
+      height + size,
+      wallOpt
+   ),
 };
 
 for (var i in walls) {
    Composite.add(world, walls[i]);
 }
 
-let interv: any;
-const ballOption: Matter.IBodyDefinition = {
-   restitution: 0.4,
-   // density: 5,
-   // friction: 10,
-   // frictionStatic: 10,
-   render: {
-      lineWidth: 2,
-      strokeStyle: 'lime',
-      fillStyle: 'transparent',
-   },
-};
-
-var collider = Bodies.rectangle(centerX, centerY, 500, 50, {
-   // isSensor: true,
-   // isStatic: true,
-   render: {
-      strokeStyle: 'red',
-      fillStyle: 'transparent',
-      lineWidth: 2,
-   },
-   // angle: 0.1,
-   // frictionAir: 0,
-   // frictionStatic: 0,
-   // friction: 0,
-});
-var const1 = Matter.Constraint.create({
-   pointA: Matter.Vector.create(centerX, centerY),
-   bodyB: collider,
-   length: 0,
-});
-
-Composite.add(world, [collider, const1]);
-
-function createCar(xx: number, yy: number, w: number, wheelSize: number) {
-   var height = wheelSize * 0.8;
-   var width = wheelSize * 2 + w;
-   var group = Body.nextGroup(true),
-      wheelBase = 10,
-      wheelAOffset = -width * 0.5 + wheelBase,
-      wheelBOffset = width * 0.5 - wheelBase,
-      wheelYOffset = 0;
-
-   var car = Composite.create({ label: 'Car' }),
-      body = Bodies.rectangle(xx, yy, width, height, {
-         collisionFilter: {
-            group: group,
-         },
-         chamfer: {
-            radius: height * 0.5,
-         },
-         density: 0.0002,
-         label: 'body',
-      });
-
-   var wheelA = Bodies.circle(xx + wheelAOffset, yy + wheelYOffset, wheelSize, {
-      collisionFilter: {
-         group: group,
-      },
-      friction: 1,
-      label: 'wheel',
-   });
-
-   var wheelB = Bodies.circle(xx + wheelBOffset, yy + wheelYOffset, wheelSize, {
-      collisionFilter: {
-         group: group,
-      },
-      friction: 1,
-      label: 'wheel',
-   });
-
-   var axelA = Constraint.create({
-      bodyB: body,
-      pointB: { x: wheelAOffset, y: wheelYOffset },
-      bodyA: wheelA,
-      stiffness: 1,
-      length: 0,
-   });
-
-   var axelB = Constraint.create({
-      bodyB: body,
-      pointB: { x: wheelBOffset, y: wheelYOffset },
-      bodyA: wheelB,
-      stiffness: 1,
-      length: 0,
-   });
-
-   Composite.add(car, body);
-   Composite.add(car, wheelA);
-   Composite.add(car, wheelB);
-   Composite.add(car, axelA);
-   Composite.add(car, axelB);
-
-   return car;
-}
-
-const car = createCar(
-   centerX,
-   centerY - 200,
-   Matter.Common.random(50, 100),
-   Matter.Common.random(20, 50)
-);
-Composite.add(world, car);
-
-addEventListener('click', () => {
-   clearInterval(interv);
-   const { x, y } = mouse.mouseupPosition;
-   const radius = Matter.Common.random(20, 50);
-   // car.torque
-   // const b = Bodies.circle(
-   //    x,
-   //    y,
-   //    radius,
-   //    _.merge(ballOption, {
-   //       torque: Math.random(),
-   //    }),
-   //    100
-   // );
-   // Composite.add(world, b);
-   // // gsap.to(b, {
-   // //    duration: 12,
-   // //    torque: 1,
-   // // });
-   // // setTimeout(() => {
-   // //    Composite.remove(world, b);
-   // // }, 10000);
-});
-
-// addEventListener('mousedown', () => {
-//    interv = setInterval(() => {
-//       const { x, y } = mouse.position
-//       Object.assign(ballOption, {
-//          render: {
-//             strokeStyle: randomHSL(null, 60, 60)
-//          }
-//       })
-//       const b = Bodies.circle(x, y, Matter.Common.random(1, 8), ballOption)
-//       Composite.add(world, b)
-//       setTimeout(() => {
-//          Composite.remove(world, b)
-//       }, 9000)
-//    }, 1)
-// })
-
-addEventListener('keydown', (e) => {
-   // const { x, y } = mouse.position;
-   // Object.assign(ballOption, {
-   //    render: {
-   //       strokeStyle: randomHSL(null, 60, 60),
-   //    },
-   // });
-   // const b = Bodies.circle(x, y, Matter.Common.random(1, 8), ballOption);
-   // Composite.add(world, b);
-   // setTimeout(() => {
-   //    Composite.remove(world, b);
-   // }, 9000);
-   car.bodies.forEach((b) => {
-      if (b.label === 'wheel') {
-         if (e.key === 'ArrowLeft') {
-            b.torque = -0.8;
-         }
-         if (e.key === 'ArrowRight') {
-            b.torque = 0.8;
-         }
+Matter.Events.on(engine, 'beforeRender', () => {
+   var translate: any;
+   var scaleFactor = mouse.wheelDelta * -0.1;
+   if (scaleFactor !== 0) {
+      if (
+         (scaleFactor < 0 && boundsScale.x >= 0.6) ||
+         (scaleFactor > 0 && boundsScale.x <= 1.4)
+      ) {
+         boundsScaleTarget += scaleFactor;
       }
-   });
+   }
+
+   // if scale has changed
+   if (Math.abs(boundsScale.x - boundsScaleTarget) > 0.01) {
+      // smoothly tween scale factor
+      scaleFactor = (boundsScaleTarget - boundsScale.x) * 0.2;
+      boundsScale.x += scaleFactor;
+      boundsScale.y += scaleFactor;
+
+      // scale the render bounds
+      render.bounds.max.x =
+         render.bounds.min.x + render.options.width * boundsScale.x;
+      render.bounds.max.y =
+         render.bounds.min.y + render.options.height * boundsScale.y;
+
+      // translate so zoom is from centre of view
+      translate = {
+         x: render.options.width * scaleFactor * -0.5,
+         y: render.options.height * scaleFactor * -0.5,
+      };
+
+      Matter.Bounds.translate(render.bounds, translate);
+
+      // update mouse
+      Matter.Mouse.setScale(mouse, boundsScale);
+      Matter.Mouse.setOffset(mouse, render.bounds.min);
+   }
+
+   // get vector from mouse relative to centre of viewport
+   var deltaCentre = Vector.sub(mouse.absolute, viewportCentre),
+      centreDist = Vector.magnitude(deltaCentre);
+
+   // translate the view if mouse has moved over 50px from the centre of viewport
+   if (centreDist > 50) {
+      // create a vector to translate the view, allowing the user to control view speed
+      var direction = Vector.normalise(deltaCentre),
+         speed = Math.min(10, Math.pow(centreDist - 50, 2) * 0.0002);
+
+      translate = Vector.mult(direction, speed);
+
+      // prevent the view moving outside the extents
+      if (render.bounds.min.x + translate.x < extents.min.x)
+         translate.x = extents.min.x - render.bounds.min.x;
+
+      if (render.bounds.max.x + translate.x > extents.max.x)
+         translate.x = extents.max.x - render.bounds.max.x;
+
+      if (render.bounds.min.y + translate.y < extents.min.y)
+         translate.y = extents.min.y - render.bounds.min.y;
+
+      if (render.bounds.max.y + translate.y > extents.max.y)
+         translate.y = extents.max.y - render.bounds.max.y;
+
+      // move the view
+      Bounds.translate(render.bounds, translate);
+
+      // we must update the mouse too
+      Mouse.setOffset(mouse, render.bounds.min);
+   }
 });
 
-Matter.Events.on(engine, 'collisionStart', () => {
-   const body = car.bodies.find((e) => e.label === 'body');
-   Render.lookAt(render, {
-      bounds: {
-         min: {
-            x: body.bounds.min.x - innerWidth / 2,
-            y: body.bounds.min.y - innerWidth / 2,
-         },
-         max: {
-            x: body.bounds.max.x + innerWidth / 2,
-            y: body.bounds.max.y + innerWidth / 2,
-         },
-      },
-   });
-});
+// let interv: any;
+// const ballOption: Matter.IBodyDefinition = {
+//    restitution: 0.4,
+//    // density: 5,
+//    // friction: 10,
+//    // frictionStatic: 10,
+//    render: {
+//       lineWidth: 2,
+//       strokeStyle: 'lime',
+//       fillStyle: 'transparent',
+//    },
+// };
 
-// Matter.Events.on(engine, 'collisionStart', e => {
-//    console.log(e.source)
-//    e.pairs.forEach(p => {
-//       if (p.bodyA.id === collider.id || p.bodyB.id === collider.id) {
-//          p.bodyA.render.strokeStyle = 'yellow'
-//          p.bodyB.render.strokeStyle = 'yellow'
-//       }
-//    })
-// })
-// Matter.Events.on(engine, 'collisionEnd', e => {
-//    console.log(e.source)
-//    const list = e.pairs
-//    e.pairs.forEach(p => {
-//       if (p.bodyA.id === collider.id || p.bodyB.id === collider.id) {
-//          if (p.bodyA.id === collider.id) {
-//             p.bodyA.render.strokeStyle = 'red'
-//             p.bodyB.render.strokeStyle = 'lime'
-//          } else {
-//             p.bodyA.render.strokeStyle = 'lime'
-//             p.bodyB.render.strokeStyle = 'red'
-//          }
-//       }
-//    })
-// })
+var svg2 = require('./svg/svgexport-2.svg');
+var paths = Array.from(
+   new DOMParser()
+      .parseFromString(svg2, 'image/svg+xml')
+      .querySelectorAll('path')
+);
+var verticeSet = paths.map((p) => Matter.Svg.pathToVertices(p, 30));
+// console.log(verticeSet);
+var terrain = Bodies.fromVertices(0, centerY, verticeSet, {
+   isStatic: true,
+   render: {
+      fillStyle: 'yellow',
+      strokeStyle: 'yellow',
+   },
+});
+Body.scale(terrain, 5, 5);
+// Composite.add(world, terrain);

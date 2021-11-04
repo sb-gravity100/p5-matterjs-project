@@ -1,5 +1,4 @@
 tasks:
-  - name: Init
-    command: |
+  - command: |
           yarn
           yarn start
