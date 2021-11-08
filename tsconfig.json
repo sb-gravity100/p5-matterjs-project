@@ -2,12 +2,14 @@
    "compilerOptions": {
       "allowSyntheticDefaultImports": true,
       "noImplicitAny": false,
+      "incremental": true,
       "module": "es6",
       "target": "es5",
       "allowJs": true,
       "moduleResolution": "node",
       "sourceMap": true,
-      "downlevelIteration": true
+      "downlevelIteration": true,
+      "baseUrl": "."
    },
-   "include": ["./src"]
+   "include": ["src"]
 }

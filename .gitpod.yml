@@ -1,4 +1,4 @@
 tasks:
-  - command: |
-          yarn
-          yarn start
+   - before: |
+        yarn
+        yarn start

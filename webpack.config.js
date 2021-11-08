@@ -12,7 +12,9 @@ const stylesHandler = isProduction
    : 'style-loader';
 
 const config = {
-   entry: './src/index.ts',
+   entry: {
+      main: ['./src/index.ts'],
+   },
    output: {
       path: path.resolve(__dirname, 'build'),
    },
@@ -40,7 +42,7 @@ const config = {
          {
             test: /\.(ts|tsx)$/i,
             loader: 'ts-loader',
-            exclude: ['/node_modules/'],
+            // exclude: ['/node_modules/'],
          },
          {
             test: /\.s[ac]ss$/i,
